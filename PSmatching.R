@@ -1,0 +1,43 @@
+#####################################################
+##R codes for EERS Propensity Score Matching session
+##Author:       Ning Rui
+##Date:         May 2, 2011
+#####################################################
+#Install MatchIt package-You only need to install the package for the first time!
+install.packages("MatchIt")
+install.packages("Zelig")
+
+#read data
+dat.df <- read.csv("C:/college.csv")
+
+#define treatment group
+treated <- dat.df$twoyr==1
+
+#define covariates
+datX.df <- dat.df[,3:22]
+
+#Assess initial balance of covariate
+std.diff <- apply(datX.df,2,function(x) 100*(mean(x[treated])-mean(x[!treated]))/(sqrt(.5*(var(x[treated])+var(x[!treated])))))
+std.diff
+
+# To use the MatchIt package, enter the library command to see where the package is stored and the m.out command to execute the propensity score matching.
+library(MatchIt)
+m.out <- matchit(twoyr ~ bytest + black + stypc80 + stwmfg80 + dadcoll + perwhite + momcoll + mommiss + urban + female + fincome + fincmiss + ownhome, data = dat.df, method = "optimal")
+
+#check improvement on covariate balance
+summary(m.out)
+match.data=match.data(m.out)
+treated1 <- match.data$twoyr==1
+matchX.df <- match.data[,3:22]
+std.diff1 <- apply(matchX.df,2,function(x) 100*(mean(x[treated1])-mean(x[!treated1]))/(sqrt(.5*(var(x[treated1])+var(x[!treated1])))))
+std.diff1
+
+#export the data file to csv, which will be saved under "My Document".
+write.table(match.data, file="matched.csv", sep = ",", col.names = NA)
+
+#conduct regression analysis after matching; you should include those covariates with post-match standard difference > 10 in the reg model.
+
+source("http://gking.harvard.edu/zelig/install.R")
+library(Zelig)
+z.out <- zelig(educ86 ~ twoyr + hispanic + bytest + stypc80 + stwmfg80, model = "ls", data = match.data)
+summary(z.out)
