@@ -41,3 +41,4 @@ source("http://gking.harvard.edu/zelig/install.R")
 library(Zelig)
 z.out <- zelig(educ86 ~ twoyr + hispanic + bytest + stypc80 + stwmfg80, model = "ls", data = match.data)
 summary(z.out)
+-------------------------
